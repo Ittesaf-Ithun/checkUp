@@ -13,30 +13,26 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
+
       - name: Check Website Uptime
         run: |
-      
-            echo "Checking website: $WEBSITE_URL"
-            STATUS=$(curl -o /dev/null -s -w "%{http_code}" $WEBSITE_URL)
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -ne 0 ]; then
+          echo "Checking website: $WEBSITE_URL"
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" $WEBSITE_URL)
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
             echo "curl failed with exit code $EXIT_CODE"
             exit $EXIT_CODE
-            fi
-            TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-            echo "$TIMESTAMP, $STATUS" >> uptime_log.txt
-            if [ "$STATUS" != "200" ]; then
+          fi
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          echo "$TIMESTAMP, $STATUS" >> uptime_log.txt
+          if [ "$STATUS" != "200" ]; then
             echo "Website is down! Status code: $STATUS"
-            else
+          else
             echo "Website is up! Status code: $STATUS"
-            fi
-
-
-      
+          fi
 
       - name: Generate HTML Report
         run: |
-          # Read the template and insert the uptime data
           DATA=""
           while IFS= read -r line; do
               TIMESTAMP=$(echo $line | cut -d',' -f1)
@@ -44,7 +40,6 @@ jobs:
               DATA="${DATA}<tr><td>${TIMESTAMP}</td><td>${STATUS}</td></tr>\n"
           done < uptime_log.txt
 
-          # Use 'sed' to replace the placeholder in the template with the actual data
           sed "s|<!-- DATA_PLACEHOLDER -->|${DATA}|g" template.html > index.html
 
       - name: Commit and Push Changes
@@ -52,8 +47,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add uptime_log.txt index.html
-          git commit -m "Updated uptime log and report at $TIMESTAMP"
+          git commit -m "Updated uptime log and report"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
