@@ -1,0 +1,45 @@
+name: Uptime Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Runs every 5 minutes
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  check-uptime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Check Website Uptime
+        run: |
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" https://yourwebsite.com)
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          echo "Status: $STATUS, Timestamp: $TIMESTAMP" >> uptime_log.txt
+          if [ "$STATUS" != "200" ]; then
+            echo "Website is down!"
+          else
+            echo "Website is up!"
+          fi
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add uptime_log.txt
+          git commit -m "Uptime check at $TIMESTAMP"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update HTML Report
+        run: |
+          echo "<html><body><h1>Uptime Report</h1><pre>" > index.html
+          cat uptime_log.txt >> index.html
+          echo "</pre></body></html>" >> index.html
+          git add index.html
+          git commit -m "Updated HTML report at $TIMESTAMP"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
