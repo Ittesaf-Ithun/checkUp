@@ -13,17 +13,26 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
-
       - name: Check Website Uptime
         run: |
-          STATUS=$(curl -o /dev/null -s -w "%{http_code}" $WEBSITE_URL)
-          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          echo "$TIMESTAMP, $STATUS" >> uptime_log.txt
-          if [ "$STATUS" != "200" ]; then
-            echo "Website is down!"
-          else
-            echo "Website is up!"
-          fi
+      
+            echo "Checking website: $WEBSITE_URL"
+            STATUS=$(curl -o /dev/null -s -w "%{http_code}" $WEBSITE_URL)
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -ne 0 ]; then
+            echo "curl failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+            fi
+            TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+            echo "$TIMESTAMP, $STATUS" >> uptime_log.txt
+            if [ "$STATUS" != "200" ]; then
+            echo "Website is down! Status code: $STATUS"
+            else
+            echo "Website is up! Status code: $STATUS"
+            fi
+
+
+      
 
       - name: Generate HTML Report
         run: |
