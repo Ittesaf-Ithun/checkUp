@@ -9,7 +9,7 @@ jobs:
   check-uptime:
     runs-on: ubuntu-latest
     env:
-      WEBSITE_URL: https://yourwebsite.com # Replace with your website URL
+      WEBSITE_URL: https://google.com # Replace with your website URL
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
