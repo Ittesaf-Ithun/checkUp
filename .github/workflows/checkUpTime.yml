@@ -41,7 +41,6 @@ jobs:
           done < uptime_log.txt
 
           sed "s|<!-- DATA_PLACEHOLDER -->|${DATA}|g" template.html > index.html
-
       - name: Commit and Push Changes
         run: |
           git config --local user.email "action@github.com"
@@ -49,5 +48,5 @@ jobs:
           git add uptime_log.txt index.html
           git commit -m "Updated uptime log and report"
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
