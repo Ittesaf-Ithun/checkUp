@@ -8,38 +8,43 @@ on:
 jobs:
   check-uptime:
     runs-on: ubuntu-latest
+    env:
+      WEBSITE_URL: https://yourwebsite.com # Replace with your website URL
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
 
       - name: Check Website Uptime
         run: |
-          STATUS=$(curl -o /dev/null -s -w "%{http_code}" https://yourwebsite.com)
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" $WEBSITE_URL)
           TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          echo "Status: $STATUS, Timestamp: $TIMESTAMP" >> uptime_log.txt
+          echo "$TIMESTAMP, $STATUS" >> uptime_log.txt
           if [ "$STATUS" != "200" ]; then
             echo "Website is down!"
           else
             echo "Website is up!"
           fi
 
+      - name: Generate HTML Report
+        run: |
+          # Read the template and insert the uptime data
+          DATA=""
+          while IFS= read -r line; do
+              TIMESTAMP=$(echo $line | cut -d',' -f1)
+              STATUS=$(echo $line | cut -d',' -f2)
+              DATA="${DATA}<tr><td>${TIMESTAMP}</td><td>${STATUS}</td></tr>\n"
+          done < uptime_log.txt
+
+          # Use 'sed' to replace the placeholder in the template with the actual data
+          sed "s|<!-- DATA_PLACEHOLDER -->|${DATA}|g" template.html > index.html
+
       - name: Commit and Push Changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add uptime_log.txt
-          git commit -m "Uptime check at $TIMESTAMP"
+          git add uptime_log.txt index.html
+          git commit -m "Updated uptime log and report at $TIMESTAMP"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update HTML Report
-        run: |
-          echo "<html><body><h1>Uptime Report</h1><pre>" > index.html
-          cat uptime_log.txt >> index.html
-          echo "</pre></body></html>" >> index.html
-          git add index.html
-          git commit -m "Updated HTML report at $TIMESTAMP"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
